@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public final class ModuleLifecycle {
     private final ModuleRegistry registry;
@@ -15,7 +16,9 @@ public final class ModuleLifecycle {
     private final boolean failFast;
     private final boolean strictDependencies;
 
-    private final Map<ModuleId, State> states = new HashMap<>();
+    private final Map<ModuleId, ModuleStatus.State> states = new HashMap<>();
+    private final Map<ModuleId, Long> enableTimesMicros = new HashMap<>();
+    private final Map<ModuleId, Throwable> failures = new HashMap<>();
     private final List<Module> enabledModules = new ArrayList<>();
 
     public ModuleLifecycle(
@@ -38,26 +41,31 @@ public final class ModuleLifecycle {
         for (final Module module : enableOrder) {
             final ModuleId moduleId = module.id();
             final long start = System.nanoTime();
-            states.put(moduleId, State.ENABLING);
+            states.put(moduleId, ModuleStatus.State.ENABLING);
             try {
                 executeMigrationsIfNeeded(module);
                 final boolean enabled = module.onEnable(context);
                 if (!enabled) {
-                    states.put(moduleId, State.FAILED);
+                    states.put(moduleId, ModuleStatus.State.FAILED);
+                    failures.put(moduleId, new IllegalStateException("Module returned false during enable."));
                     context.loggingService().warn(moduleId.value(), "Module returned false during enable.");
+                    runModuleCleanup(moduleId);
                     if (failFast) {
                         throw new IllegalStateException("Module " + moduleId + " returned false during enable.");
                     }
                     continue;
                 }
 
-                states.put(moduleId, State.ENABLED);
+                states.put(moduleId, ModuleStatus.State.ENABLED);
                 enabledModules.add(module);
                 configService.setStoredModuleVersion(moduleId, module.schemaVersion());
                 final long elapsedMicros = (System.nanoTime() - start) / 1_000L;
+                enableTimesMicros.put(moduleId, elapsedMicros);
                 context.loggingService().info(moduleId.value(), "Enabled in " + elapsedMicros + "us.");
             } catch (final Exception ex) {
-                states.put(moduleId, State.FAILED);
+                states.put(moduleId, ModuleStatus.State.FAILED);
+                failures.put(moduleId, ex);
+                runModuleCleanup(moduleId);
                 context.loggingService().error(moduleId.value(), "Module failed to enable.", ex);
                 if (failFast) {
                     throw new IllegalStateException("Module startup aborted due to failure in " + moduleId, ex);
@@ -69,9 +77,11 @@ public final class ModuleLifecycle {
             final ModuleId moduleId = module.id();
             try {
                 module.postEnable(context);
-                states.put(moduleId, State.POST_ENABLED);
+                states.put(moduleId, ModuleStatus.State.POST_ENABLED);
             } catch (final Exception ex) {
-                states.put(moduleId, State.FAILED);
+                states.put(moduleId, ModuleStatus.State.FAILED);
+                failures.put(moduleId, ex);
+                runModuleCleanup(moduleId);
                 context.loggingService().error(moduleId.value(), "Module post-enable failed.", ex);
                 if (failFast) {
                     throw new IllegalStateException("Post-enable aborted due to failure in " + moduleId, ex);
@@ -88,16 +98,19 @@ public final class ModuleLifecycle {
 
         for (final Module module : reverseOrder) {
             final ModuleId moduleId = module.id();
-            states.put(moduleId, State.DISABLING);
+            states.put(moduleId, ModuleStatus.State.DISABLING);
             try {
-                context.schedulerService().cancelOwnerTasks(moduleId);
                 module.onDisable(context);
-                states.put(moduleId, State.DISABLED);
+                states.put(moduleId, ModuleStatus.State.DISABLED);
             } catch (final Exception ex) {
-                states.put(moduleId, State.FAILED);
+                states.put(moduleId, ModuleStatus.State.FAILED);
+                failures.put(moduleId, ex);
                 context.loggingService().error(moduleId.value(), "Module failed to disable cleanly.", ex);
+            } finally {
+                runModuleCleanup(moduleId);
             }
         }
+        enabledModules.clear();
     }
 
     private void executeMigrationsIfNeeded(final Module module) throws Exception {
@@ -115,12 +128,24 @@ public final class ModuleLifecycle {
         }
     }
 
-    private enum State {
-        ENABLING,
-        ENABLED,
-        POST_ENABLED,
-        DISABLING,
-        DISABLED,
-        FAILED
+    public Map<ModuleId, ModuleStatus.Snapshot> statusSnapshots() {
+        final Map<ModuleId, ModuleStatus.Snapshot> snapshots = new HashMap<>(states.size());
+        for (final Map.Entry<ModuleId, ModuleStatus.State> entry : states.entrySet()) {
+            final ModuleId moduleId = entry.getKey();
+            snapshots.put(
+                    moduleId,
+                    new ModuleStatus.Snapshot(
+                            moduleId,
+                            entry.getValue(),
+                            Optional.ofNullable(enableTimesMicros.get(moduleId)),
+                            Optional.ofNullable(failures.get(moduleId)).map(Throwable::getMessage)));
+        }
+        return Map.copyOf(snapshots);
+    }
+
+    private void runModuleCleanup(final ModuleId moduleId) {
+        context.schedulerService().cancelOwnerTasks(moduleId);
+        context.eventService().unregisterOwnerListeners(moduleId);
+        context.commandService().unregisterOwnerCommands(moduleId);
     }
 }

@@ -19,6 +19,8 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
+    testCompileOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
+    testRuntimeOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
 
     testImplementation(platform("org.junit:junit-bom:5.10.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
