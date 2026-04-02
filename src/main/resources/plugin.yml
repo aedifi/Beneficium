@@ -1,0 +1,6 @@
+name: Beneficium
+version: ${version}
+main: aedifi.bene.BenePlugin
+api-version: "1.21"
+author: Aedificium
+description: Centralized modular core plugin for Aedificium.
