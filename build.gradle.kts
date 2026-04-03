@@ -18,7 +18,7 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":aedi-api"))
+    implementation(project(":bene-api"))
     compileOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
     testCompileOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
     testRuntimeOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
@@ -39,7 +39,7 @@ tasks.test {
 
 tasks.jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from(project(":aedi-api").sourceSets.main.get().output)
+    from(project(":bene-api").sourceSets.main.get().output)
 }
 
 tasks.processResources {

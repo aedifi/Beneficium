@@ -1,2 +1,2 @@
 rootProject.name = "Beneficium"
-include("aedi-api")
+include("bene-api")
