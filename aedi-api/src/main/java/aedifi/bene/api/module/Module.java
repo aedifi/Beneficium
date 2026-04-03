@@ -25,9 +25,6 @@ public interface Module {
         return true;
     }
 
-    default void postEnable(final PluginContext context) throws Exception {
-    }
-
     default void onDisable(final PluginContext context) throws Exception {
     }
 }

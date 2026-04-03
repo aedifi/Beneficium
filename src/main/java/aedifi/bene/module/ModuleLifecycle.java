@@ -3,7 +3,7 @@ package aedifi.bene.module;
 import aedifi.bene.api.module.Module;
 import aedifi.bene.api.module.ModuleId;
 import aedifi.bene.api.module.ModuleStatus;
-import aedifi.bene.core.PluginContext;
+import aedifi.bene.core.KernelContext;
 import aedifi.bene.service.ConfigService;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +15,7 @@ import java.util.Optional;
 
 public final class ModuleLifecycle {
     private final ModuleRegistry registry;
-    private final PluginContext context;
+    private final KernelContext context;
     private final ConfigService configService;
     private final boolean failFast;
     private final boolean strictDependencies;
@@ -27,7 +27,7 @@ public final class ModuleLifecycle {
 
     public ModuleLifecycle(
             final ModuleRegistry registry,
-            final PluginContext context,
+            final KernelContext context,
             final boolean failFast,
             final boolean strictDependencies) {
         this.registry = registry;
@@ -77,22 +77,6 @@ public final class ModuleLifecycle {
                 context.logging().error(moduleId.value(), "Module failed to enable.", ex);
                 if (failFast) {
                     throw new IllegalStateException("Module startup aborted due to failure in " + moduleId, ex);
-                }
-            }
-        }
-
-        for (final Module module : enabledModules) {
-            final ModuleId moduleId = module.id();
-            try {
-                module.postEnable(context);
-                states.put(moduleId, ModuleStatus.State.POST_ENABLED);
-            } catch (final Exception ex) {
-                states.put(moduleId, ModuleStatus.State.FAILED);
-                failures.put(moduleId, ex);
-                runModuleCleanup(moduleId);
-                context.logging().error(moduleId.value(), "Module post-enable failed.", ex);
-                if (failFast) {
-                    throw new IllegalStateException("Post-enable aborted due to failure in " + moduleId, ex);
                 }
             }
         }

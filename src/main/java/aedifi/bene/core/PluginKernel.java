@@ -1,9 +1,11 @@
 package aedifi.bene.core;
 
+import aedifi.bene.BenePlugin;
+import aedifi.bene.api.module.ModuleId;
+import aedifi.bene.api.service.Commands;
+import aedifi.bene.command.aedi.AediCommand;
 import aedifi.bene.module.ModuleLifecycle;
 import aedifi.bene.module.ModuleRegistry;
-import aedifi.bene.module.core.CoreBootstrapModule;
-import aedifi.bene.module.core.CoreCommandsModule;
 import aedifi.bene.module.external.ExternalModuleLoader;
 import aedifi.bene.service.CommandService;
 import aedifi.bene.service.ConfigService;
@@ -12,10 +14,11 @@ import aedifi.bene.service.EventService;
 import aedifi.bene.service.LoggingService;
 import aedifi.bene.service.PermissionService;
 import aedifi.bene.service.SchedulerService;
-import org.bukkit.plugin.java.JavaPlugin;
 
 public final class PluginKernel {
-    private final JavaPlugin plugin;
+    private static final ModuleId KERNEL_COMMANDS = ModuleId.of("kernel");
+
+    private final BenePlugin plugin;
     private final LoggingService loggingService;
     private final ConfigService configService;
     private final SchedulerService schedulerService;
@@ -24,11 +27,11 @@ public final class PluginKernel {
     private final DiagnosticsService diagnosticsService;
     private final CommandService commandService;
     private final ModuleRegistry moduleRegistry;
-    private final PluginContext context;
+    private final KernelContext context;
     private final ExternalModuleLoader externalModuleLoader;
     private ModuleLifecycle moduleLifecycle;
 
-    public PluginKernel(final JavaPlugin plugin) {
+    public PluginKernel(final BenePlugin plugin) {
         this.plugin = plugin;
         this.loggingService = new LoggingService(plugin.getLogger());
         this.configService = new ConfigService(plugin);
@@ -38,7 +41,7 @@ public final class PluginKernel {
         this.diagnosticsService = new DiagnosticsService();
         this.commandService = new CommandService(plugin, loggingService);
         this.moduleRegistry = new ModuleRegistry();
-        this.context = new PluginContext(
+        this.context = new KernelContext(
                 plugin,
                 configService,
                 schedulerService,
@@ -54,7 +57,7 @@ public final class PluginKernel {
         final long start = System.nanoTime();
         loggingService.info("kernel", "Kernel is starting up.");
         configService.load();
-        registerCoreModules();
+        registerAdministrativeCommands();
         externalModuleLoader.loadAll(moduleRegistry);
 
         moduleLifecycle = new ModuleLifecycle(
@@ -76,22 +79,21 @@ public final class PluginKernel {
             moduleLifecycle = null;
         }
         externalModuleLoader.closeAll();
-        commandService.clearAllDefinitions();
         commandService.shutdown();
         eventService.unregisterAllListeners();
         schedulerService.cancelAllTrackedTasks();
     }
 
-    private void registerCoreModules() {
-        moduleRegistry.register(new CoreBootstrapModule());
-        moduleRegistry.register(new CoreCommandsModule());
+    private void registerAdministrativeCommands() {
+        final AediCommand aediCommand = new AediCommand(plugin);
+        commandService.register(
+                KERNEL_COMMANDS,
+                new Commands.Registration("aedi"),
+                aediCommand,
+                aediCommand);
     }
 
     public DiagnosticsService diagnostics() {
         return diagnosticsService;
-    }
-
-    public CommandService commandService() {
-        return commandService;
     }
 }

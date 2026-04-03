@@ -15,7 +15,7 @@ import aedifi.bene.service.PermissionService;
 import aedifi.bene.service.SchedulerService;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class PluginContext implements aedifi.bene.api.PluginContext {
+public final class KernelContext implements aedifi.bene.api.PluginContext {
     private final JavaPlugin plugin;
     private final ConfigService configService;
     private final SchedulerService schedulerService;
@@ -25,7 +25,7 @@ public final class PluginContext implements aedifi.bene.api.PluginContext {
     private final DiagnosticsService diagnosticsService;
     private final CommandService commandService;
 
-    public PluginContext(
+    public KernelContext(
             final JavaPlugin plugin,
             final ConfigService configService,
             final SchedulerService schedulerService,

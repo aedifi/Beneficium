@@ -1,6 +1,6 @@
-package aedifi.bene.command;
+package aedifi.bene.api.command;
 
-import aedifi.bene.util.MessageUtil;
+import aedifi.bene.api.util.MessageUtil;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -8,9 +8,6 @@ import java.util.Locale;
 import java.util.Map;
 import org.bukkit.command.CommandSender;
 
-/**
- * Shared Bukkit dispatch logic for root commands with a first-token argument (subcommand) router.
- */
 public final class ArgumentDispatcher {
     @FunctionalInterface
     public interface ArgumentHandler {
@@ -77,17 +74,30 @@ public final class ArgumentDispatcher {
         return argument.handler().execute(sender, remaining);
     }
 
+    public List<String> complete(final CommandSender sender, final String[] rawArgs) {
+        final String[] args = rawArgs == null ? new String[0] : rawArgs;
+        if (args.length == 0 || args.length == 1) {
+            final String prefix = args.length == 0 ? "" : normalize(args[0]);
+            return arguments.stream()
+                    .filter(argument -> hasPermission(sender, argument.permission()))
+                    .map(ArgumentSpec::name)
+                    .filter(name -> normalize(name).startsWith(prefix))
+                    .sorted()
+                    .toList();
+        }
+        return List.of();
+    }
+
     private boolean sendUsage(final CommandSender sender) {
         if (!hasPermission(sender, usagePermission)) {
             sender.sendMessage(MessageUtil.errorOrDefault(null, MessageUtil.DEFAULT_NO_PERMISSION));
             return true;
         }
-        sender.sendMessage(MessageUtil.component(
-                MessageUtil.usageForSubcommands(
-                        root,
-                        arguments.stream()
-                                .map(ArgumentSpec::name)
-                                .toList())));
+        sender.sendMessage(MessageUtil.component(formatUsageForSubcommands(
+                root,
+                arguments.stream()
+                        .map(ArgumentSpec::name)
+                        .toList())));
         return true;
     }
 
@@ -132,6 +142,22 @@ public final class ArgumentDispatcher {
         if (previous != null && previous != argument) {
             throw new IllegalArgumentException("Duplicate argument token: " + token);
         }
+    }
+
+    public static String formatUsageForSubcommands(final String root, final List<String> subcommands) {
+        if (root == null || root.isBlank()) {
+            throw new IllegalArgumentException("Root command cannot be blank.");
+        }
+        final List<String> tokens = subcommands == null ? List.of() : subcommands;
+        final String joined = tokens.stream()
+                .distinct()
+                .sorted()
+                .reduce((left, right) -> left + " | " + right)
+                .orElse("");
+        if (joined.isEmpty()) {
+            return "&r/" + root;
+        }
+        return "&r/" + root + " <" + joined + ">";
     }
 
     private static String normalize(final String token) {

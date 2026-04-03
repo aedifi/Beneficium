@@ -3,6 +3,7 @@ package aedifi.bene.module.external;
 import aedifi.bene.api.BeneApi;
 import aedifi.bene.api.module.Module;
 import aedifi.bene.api.module.ModuleId;
+import aedifi.bene.api.module.descriptor.ModuleDescriptor;
 import aedifi.bene.api.service.Logging;
 import aedifi.bene.module.ModuleRegistry;
 import java.io.IOException;
@@ -96,17 +97,6 @@ public final class ExternalModuleLoader {
             final Module module = (Module) rawClass.getDeclaredConstructor().newInstance();
             if (!descriptor.id().equals(module.id())) {
                 throw new IllegalStateException("Module ID mismatch for " + descriptor.mainClass());
-            }
-            if (!descriptor.dependencies().isEmpty() && !descriptor.dependencies().equals(module.dependencies())) {
-                logging.warn(
-                        "module-loader",
-                        "Descriptor dependencies differ from module implementation for " + descriptor.id() + ".");
-            }
-            if (descriptor.schemaVersion() != module.schemaVersion()) {
-                logging.warn(
-                        "module-loader",
-                        "Schema version mismatch for " + descriptor.id() + " (descriptor "
-                                + descriptor.schemaVersion() + ", module " + module.schemaVersion() + ").");
             }
             return new LoadedModule(descriptor, module, classLoader, jarPath);
         } catch (final Exception ex) {

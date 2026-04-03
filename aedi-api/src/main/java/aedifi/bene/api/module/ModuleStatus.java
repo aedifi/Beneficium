@@ -8,7 +8,6 @@ public final class ModuleStatus {
     public enum State {
         ENABLING,
         ENABLED,
-        POST_ENABLED,
         DISABLING,
         DISABLED,
         FAILED
