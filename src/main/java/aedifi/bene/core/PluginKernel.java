@@ -4,6 +4,7 @@ import aedifi.bene.module.ModuleLifecycle;
 import aedifi.bene.module.ModuleRegistry;
 import aedifi.bene.module.core.CoreBootstrapModule;
 import aedifi.bene.module.core.CoreCommandsModule;
+import aedifi.bene.module.external.ExternalModuleLoader;
 import aedifi.bene.service.CommandService;
 import aedifi.bene.service.ConfigService;
 import aedifi.bene.service.DiagnosticsService;
@@ -24,6 +25,7 @@ public final class PluginKernel {
     private final CommandService commandService;
     private final ModuleRegistry moduleRegistry;
     private final PluginContext context;
+    private final ExternalModuleLoader externalModuleLoader;
     private ModuleLifecycle moduleLifecycle;
 
     public PluginKernel(final JavaPlugin plugin) {
@@ -34,7 +36,7 @@ public final class PluginKernel {
         this.eventService = new EventService(plugin);
         this.permissionService = new PermissionService();
         this.diagnosticsService = new DiagnosticsService();
-        this.commandService = new CommandService();
+        this.commandService = new CommandService(plugin, loggingService);
         this.moduleRegistry = new ModuleRegistry();
         this.context = new PluginContext(
                 plugin,
@@ -45,12 +47,15 @@ public final class PluginKernel {
                 permissionService,
                 diagnosticsService,
                 commandService);
+        this.externalModuleLoader = new ExternalModuleLoader(plugin, loggingService);
     }
 
     public void start() {
-        loggingService.info("kernel", "Starting Beneficium kernel.");
+        final long start = System.nanoTime();
+        loggingService.info("kernel", "Kernel is starting up.");
         configService.load();
         registerCoreModules();
+        externalModuleLoader.loadAll(moduleRegistry);
 
         moduleLifecycle = new ModuleLifecycle(
                 moduleRegistry,
@@ -60,23 +65,33 @@ public final class PluginKernel {
         diagnosticsService.bindLifecycleSnapshots(moduleLifecycle::statusSnapshots);
 
         moduleLifecycle.enableAll();
-        loggingService.info("kernel", "Beneficium kernel started.");
+        final double elapsedMillis = (System.nanoTime() - start) / 1_000_000.0D;
+        loggingService.info("kernel", "Kernel has finished in " + String.format(java.util.Locale.ROOT, "%.3f", elapsedMillis) + "ms.");
     }
 
     public void shutdown() {
-        loggingService.info("kernel", "Stopping Beneficium kernel.");
+        loggingService.info("kernel", "Kernel is shutting down.");
         if (moduleLifecycle != null) {
             moduleLifecycle.disableAll();
             moduleLifecycle = null;
         }
+        externalModuleLoader.closeAll();
         commandService.clearAllDefinitions();
+        commandService.shutdown();
         eventService.unregisterAllListeners();
         schedulerService.cancelAllTrackedTasks();
-        loggingService.info("kernel", "Beneficium kernel stopped.");
     }
 
     private void registerCoreModules() {
         moduleRegistry.register(new CoreBootstrapModule());
         moduleRegistry.register(new CoreCommandsModule());
+    }
+
+    public DiagnosticsService diagnostics() {
+        return diagnosticsService;
+    }
+
+    public CommandService commandService() {
+        return commandService;
     }
 }

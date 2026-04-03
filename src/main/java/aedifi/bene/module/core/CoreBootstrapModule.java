@@ -1,8 +1,8 @@
 package aedifi.bene.module.core;
 
-import aedifi.bene.core.PluginContext;
-import aedifi.bene.module.AbstractModule;
-import aedifi.bene.module.ModuleId;
+import aedifi.bene.api.PluginContext;
+import aedifi.bene.api.module.AbstractModule;
+import aedifi.bene.api.module.ModuleId;
 
 public final class CoreBootstrapModule extends AbstractModule {
     private static final ModuleId MODULE_ID = ModuleId.of("core.bootstrap");
@@ -14,12 +14,10 @@ public final class CoreBootstrapModule extends AbstractModule {
 
     @Override
     public boolean onEnable(final PluginContext context) {
-        info(context, "Core bootstrap module is active.");
         return true;
     }
 
     @Override
     public void onDisable(final PluginContext context) {
-        info(context, "Core bootstrap module is shutting down.");
     }
 }

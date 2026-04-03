@@ -4,3 +4,18 @@ main: aedifi.bene.BenePlugin
 api-version: "1.21"
 author: Aedificium
 description: Centralized modular core plugin for Aedificium.
+commands:
+  aedi:
+    description: Aedificium core command
+    usage: /aedi <version|modules|reload>
+    aliases: [aedifi, aedificium]
+permissions:
+  bene.aedi.info:
+    description: View Beneficium status and version
+    default: op
+  bene.aedi.modules:
+    description: View Beneficium module status
+    default: op
+  bene.aedi.restart:
+    description: Restart Beneficium kernel
+    default: op

@@ -1,6 +1,6 @@
 package aedifi.bene.command;
 
-import static aedifi.bene.command.CommandModel.*;
+import static aedifi.bene.api.command.CommandModel.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +35,8 @@ public final class CommandDefinitionParser {
         final String permission = optionalString(rawMap.get("permission"), base + ".permission", sourceName);
         final List<CommandArgumentSpec> arguments = parseArguments(rawMap.get("arguments"), base + ".arguments", sourceName);
         final CommandActionSpec action = parseAction(rawMap.get("action"), base + ".action", sourceName);
-        return new CommandDefinition(id, root, aliases, senderType, permission, arguments, action);
+        final CommandFeedbackSpec feedback = parseFeedback(rawMap.get("messages"), base + ".messages", sourceName);
+        return new CommandDefinition(id, root, aliases, senderType, permission, arguments, action, feedback);
     }
 
     private List<CommandArgumentSpec> parseArguments(final Object raw, final String keyPath, final String sourceName) {
@@ -70,7 +71,43 @@ public final class CommandDefinitionParser {
             throw parseError(sourceName, keyPath, "Expected a YAML object.");
         }
         final String staticText = optionalString(map.get("text"), keyPath + ".text", sourceName);
-        return new CommandActionSpec(staticText == null ? "" : staticText);
+        final String scriptRef = optionalString(map.get("script"), keyPath + ".script", sourceName);
+        final String languageRaw = optionalString(map.get("language"), keyPath + ".language", sourceName);
+        final String hostActionRef = optionalString(map.get("host"), keyPath + ".host", sourceName);
+        if (scriptRef != null && scriptRef.isBlank()) {
+            throw parseError(sourceName, keyPath + ".script", "Expected a non-blank string.");
+        }
+        if (hostActionRef != null && hostActionRef.isBlank()) {
+            throw parseError(sourceName, keyPath + ".host", "Expected a non-blank string.");
+        }
+        if (languageRaw != null && scriptRef == null) {
+            throw parseError(sourceName, keyPath + ".language", "Script language requires a script reference.");
+        }
+        final int actionKinds = (staticText != null && !staticText.isBlank() ? 1 : 0)
+                + (scriptRef != null ? 1 : 0)
+                + (hostActionRef != null ? 1 : 0);
+        if (actionKinds > 1) {
+            throw parseError(sourceName, keyPath, "Action must define only one of text, script, or host.");
+        }
+        final ScriptLanguage language = scriptRef == null
+                ? ScriptLanguage.NONE
+                : (languageRaw == null
+                        ? ScriptLanguage.LUA
+                        : parseEnum(ScriptLanguage.class, languageRaw, sourceName, keyPath + ".language"));
+        return new CommandActionSpec(staticText, scriptRef, language, hostActionRef);
+    }
+
+    private CommandFeedbackSpec parseFeedback(final Object raw, final String keyPath, final String sourceName) {
+        if (raw == null) {
+            return CommandFeedbackSpec.empty();
+        }
+        if (!(raw instanceof Map<?, ?> map)) {
+            throw parseError(sourceName, keyPath, "Expected a YAML object.");
+        }
+        final String noPermission = optionalString(map.get("no-permission"), keyPath + ".no-permission", sourceName);
+        final String usage = optionalString(map.get("usage"), keyPath + ".usage", sourceName);
+        final String invalidSub = optionalString(map.get("invalid-subcommand"), keyPath + ".invalid-subcommand", sourceName);
+        return new CommandFeedbackSpec(noPermission, usage, invalidSub);
     }
 
     private CommandSenderType parseSenderType(final Object raw, final String keyPath, final String sourceName) {

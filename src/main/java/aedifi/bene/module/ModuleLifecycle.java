@@ -1,11 +1,15 @@
 package aedifi.bene.module;
 
+import aedifi.bene.api.module.Module;
+import aedifi.bene.api.module.ModuleId;
+import aedifi.bene.api.module.ModuleStatus;
 import aedifi.bene.core.PluginContext;
 import aedifi.bene.service.ConfigService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,19 +40,20 @@ public final class ModuleLifecycle {
     public void enableAll() {
         final List<Module> enableOrder = registry.resolveEnableOrder(
                 strictDependencies,
-                warning -> context.loggingService().warn("module-lifecycle", warning));
+                warning -> context.logging().warn("module-lifecycle", warning));
 
         for (final Module module : enableOrder) {
             final ModuleId moduleId = module.id();
             final long start = System.nanoTime();
             states.put(moduleId, ModuleStatus.State.ENABLING);
+            context.logging().info(moduleId.value(), "Module is starting up.");
             try {
                 executeMigrationsIfNeeded(module);
                 final boolean enabled = module.onEnable(context);
                 if (!enabled) {
                     states.put(moduleId, ModuleStatus.State.FAILED);
                     failures.put(moduleId, new IllegalStateException("Module returned false during enable."));
-                    context.loggingService().warn(moduleId.value(), "Module returned false during enable.");
+                    context.logging().warn(moduleId.value(), "Module returned false during enable.");
                     runModuleCleanup(moduleId);
                     if (failFast) {
                         throw new IllegalStateException("Module " + moduleId + " returned false during enable.");
@@ -61,12 +66,15 @@ public final class ModuleLifecycle {
                 configService.setStoredModuleVersion(moduleId, module.schemaVersion());
                 final long elapsedMicros = (System.nanoTime() - start) / 1_000L;
                 enableTimesMicros.put(moduleId, elapsedMicros);
-                context.loggingService().info(moduleId.value(), "Enabled in " + elapsedMicros + "us.");
+                final double elapsedMillis = elapsedMicros / 1_000.0D;
+                context.logging().info(
+                        moduleId.value(),
+                        "Module has finished in " + formatMillis(elapsedMillis) + "ms.");
             } catch (final Exception ex) {
                 states.put(moduleId, ModuleStatus.State.FAILED);
                 failures.put(moduleId, ex);
                 runModuleCleanup(moduleId);
-                context.loggingService().error(moduleId.value(), "Module failed to enable.", ex);
+                context.logging().error(moduleId.value(), "Module failed to enable.", ex);
                 if (failFast) {
                     throw new IllegalStateException("Module startup aborted due to failure in " + moduleId, ex);
                 }
@@ -82,7 +90,7 @@ public final class ModuleLifecycle {
                 states.put(moduleId, ModuleStatus.State.FAILED);
                 failures.put(moduleId, ex);
                 runModuleCleanup(moduleId);
-                context.loggingService().error(moduleId.value(), "Module post-enable failed.", ex);
+                context.logging().error(moduleId.value(), "Module post-enable failed.", ex);
                 if (failFast) {
                     throw new IllegalStateException("Post-enable aborted due to failure in " + moduleId, ex);
                 }
@@ -99,13 +107,14 @@ public final class ModuleLifecycle {
         for (final Module module : reverseOrder) {
             final ModuleId moduleId = module.id();
             states.put(moduleId, ModuleStatus.State.DISABLING);
+            context.logging().info(moduleId.value(), "Module is shutting down.");
             try {
                 module.onDisable(context);
                 states.put(moduleId, ModuleStatus.State.DISABLED);
             } catch (final Exception ex) {
                 states.put(moduleId, ModuleStatus.State.FAILED);
                 failures.put(moduleId, ex);
-                context.loggingService().error(moduleId.value(), "Module failed to disable cleanly.", ex);
+                context.logging().error(moduleId.value(), "Module failed to disable cleanly.", ex);
             } finally {
                 runModuleCleanup(moduleId);
             }
@@ -144,8 +153,12 @@ public final class ModuleLifecycle {
     }
 
     private void runModuleCleanup(final ModuleId moduleId) {
-        context.schedulerService().cancelOwnerTasks(moduleId);
-        context.eventService().unregisterOwnerListeners(moduleId);
-        context.commandService().unregisterOwnerCommands(moduleId);
+        context.scheduler().cancelOwnerTasks(moduleId);
+        context.events().unregisterOwnerListeners(moduleId);
+        context.commands().unregisterOwnerCommands(moduleId);
+    }
+
+    private static String formatMillis(final double millis) {
+        return String.format(Locale.ROOT, "%.3f", millis);
     }
 }

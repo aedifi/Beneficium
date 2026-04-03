@@ -1,6 +1,6 @@
-package aedifi.bene.module;
+package aedifi.bene.api.module;
 
-import aedifi.bene.core.PluginContext;
+import aedifi.bene.api.PluginContext;
 import java.util.Set;
 
 public interface Module {

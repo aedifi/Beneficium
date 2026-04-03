@@ -1,6 +1,6 @@
 package aedifi.bene.command;
 
-import static aedifi.bene.command.CommandModel.*;
+import static aedifi.bene.api.command.CommandModel.*;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -14,12 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class CommandTreeCompiler {
-    public List<LiteralArgumentBuilder<CommandExecutionContext>> compile(final CommandDefinition definition) {
+    public List<LiteralArgumentBuilder<CommandExecutionContext>> compile(
+            final CommandDefinition definition,
+            final CommandActionHandler actionHandler) {
         final List<LiteralArgumentBuilder<CommandExecutionContext>> roots = new ArrayList<>();
-        roots.add(buildRoot(definition.root(), definition));
+        roots.add(buildRoot(definition.root(), definition, actionHandler));
         for (final String alias : definition.aliases()) {
             if (!alias.contains("*")) {
-                roots.add(buildRoot(alias, definition));
+                roots.add(buildRoot(alias, definition, actionHandler));
             }
         }
         return List.copyOf(roots);
@@ -27,9 +29,10 @@ public final class CommandTreeCompiler {
 
     private LiteralArgumentBuilder<CommandExecutionContext> buildRoot(
             final String literal,
-            final CommandDefinition definition) {
+            final CommandDefinition definition,
+            final CommandActionHandler actionHandler) {
         final LiteralArgumentBuilder<CommandExecutionContext> root = LiteralArgumentBuilder.literal(literal);
-        root.executes(ctx -> 1);
+        root.executes(ctx -> actionHandler.execute(definition, ctx));
 
         ArgumentBuilder<CommandExecutionContext, ?> cursor = root;
         for (final CommandArgumentSpec argument : definition.arguments()) {
@@ -39,7 +42,7 @@ public final class CommandTreeCompiler {
             if (!argument.suggestions().isEmpty()) {
                 next.suggests(staticSuggestions(argument.suggestions()));
             }
-            next.executes(ctx -> 1);
+            next.executes(ctx -> actionHandler.execute(definition, ctx));
             cursor.then(next);
             cursor = next;
         }

@@ -1,6 +1,7 @@
 package aedifi.bene.service;
 
-import aedifi.bene.module.ModuleId;
+import aedifi.bene.api.module.ModuleId;
+import aedifi.bene.api.service.Scheduler;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,7 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
-public final class SchedulerService {
+public final class SchedulerService implements Scheduler {
     private final JavaPlugin plugin;
     private final boolean testMode;
     private final Map<ModuleId, List<BukkitTask>> moduleTasks = new HashMap<>();
@@ -28,6 +29,7 @@ public final class SchedulerService {
         return new SchedulerService();
     }
 
+    @Override
     public BukkitTask runTask(final ModuleId owner, final Runnable task) {
         if (testMode) {
             throw new IllegalStateException("Task scheduling is unavailable in test mode.");
@@ -37,6 +39,7 @@ public final class SchedulerService {
         return bukkitTask;
     }
 
+    @Override
     public BukkitTask runTaskTimer(final ModuleId owner, final Runnable task, final long delay, final long period) {
         if (testMode) {
             throw new IllegalStateException("Task scheduling is unavailable in test mode.");
@@ -46,6 +49,7 @@ public final class SchedulerService {
         return bukkitTask;
     }
 
+    @Override
     public void cancelOwnerTasks(final ModuleId owner) {
         final List<BukkitTask> tasks = moduleTasks.remove(owner);
         if (tasks == null) {

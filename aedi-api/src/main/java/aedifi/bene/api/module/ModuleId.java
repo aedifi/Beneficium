@@ -1,4 +1,4 @@
-package aedifi.bene.module;
+package aedifi.bene.api.module;
 
 import java.util.Locale;
 import java.util.Objects;

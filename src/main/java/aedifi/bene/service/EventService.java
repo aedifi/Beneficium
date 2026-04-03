@@ -1,6 +1,7 @@
 package aedifi.bene.service;
 
-import aedifi.bene.module.ModuleId;
+import aedifi.bene.api.module.ModuleId;
+import aedifi.bene.api.service.Events;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +11,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class EventService {
+public final class EventService implements Events {
     private final JavaPlugin plugin;
     private final boolean testMode;
     private final Map<ModuleId, List<Listener>> moduleListeners = new HashMap<>();
@@ -29,6 +30,7 @@ public final class EventService {
         return new EventService();
     }
 
+    @Override
     public void registerListener(final ModuleId owner, final Listener listener) {
         if (!testMode) {
             Bukkit.getPluginManager().registerEvents(listener, plugin);
@@ -36,6 +38,7 @@ public final class EventService {
         moduleListeners.computeIfAbsent(owner, ignored -> new ArrayList<>(2)).add(listener);
     }
 
+    @Override
     public void unregisterOwnerListeners(final ModuleId owner) {
         final List<Listener> listeners = moduleListeners.remove(owner);
         if (listeners == null) {

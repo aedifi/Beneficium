@@ -1,10 +1,7 @@
-package aedifi.bene.module;
+package aedifi.bene.api.module;
 
 import java.util.Optional;
 
-/**
- * Lifecycle phase and read-only status snapshots for diagnostics.
- */
 public final class ModuleStatus {
     private ModuleStatus() {}
 

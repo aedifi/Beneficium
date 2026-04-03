@@ -1,15 +1,21 @@
 package aedifi.bene.core;
 
+import aedifi.bene.api.service.Commands;
+import aedifi.bene.api.service.Diagnostics;
+import aedifi.bene.api.service.Events;
+import aedifi.bene.api.service.Logging;
+import aedifi.bene.api.service.Permissions;
+import aedifi.bene.api.service.Scheduler;
+import aedifi.bene.service.CommandService;
 import aedifi.bene.service.ConfigService;
 import aedifi.bene.service.DiagnosticsService;
 import aedifi.bene.service.EventService;
 import aedifi.bene.service.LoggingService;
 import aedifi.bene.service.PermissionService;
 import aedifi.bene.service.SchedulerService;
-import aedifi.bene.service.CommandService;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public final class PluginContext {
+public final class PluginContext implements aedifi.bene.api.PluginContext {
     private final JavaPlugin plugin;
     private final ConfigService configService;
     private final SchedulerService schedulerService;
@@ -38,6 +44,7 @@ public final class PluginContext {
         this.commandService = commandService;
     }
 
+    @Override
     public JavaPlugin plugin() {
         return plugin;
     }
@@ -46,27 +53,33 @@ public final class PluginContext {
         return configService;
     }
 
-    public SchedulerService schedulerService() {
+    @Override
+    public Scheduler scheduler() {
         return schedulerService;
     }
 
-    public LoggingService loggingService() {
+    @Override
+    public Logging logging() {
         return loggingService;
     }
 
-    public EventService eventService() {
+    @Override
+    public Events events() {
         return eventService;
     }
 
-    public PermissionService permissionService() {
+    @Override
+    public Permissions permissions() {
         return permissionService;
     }
 
-    public DiagnosticsService diagnosticsService() {
+    @Override
+    public Diagnostics diagnostics() {
         return diagnosticsService;
     }
 
-    public CommandService commandService() {
+    @Override
+    public Commands commands() {
         return commandService;
     }
 }

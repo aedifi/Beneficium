@@ -1,10 +1,10 @@
 package aedifi.bene.module.core;
 
-import static aedifi.bene.command.CommandModel.*;
+import static aedifi.bene.api.command.CommandModel.*;
 
-import aedifi.bene.core.PluginContext;
-import aedifi.bene.module.AbstractModule;
-import aedifi.bene.module.ModuleId;
+import aedifi.bene.api.PluginContext;
+import aedifi.bene.api.module.AbstractModule;
+import aedifi.bene.api.module.ModuleId;
 import java.util.List;
 import java.util.Set;
 
@@ -24,23 +24,21 @@ public final class CoreCommandsModule extends AbstractModule {
 
     @Override
     public boolean onEnable(final PluginContext context) {
-        context.commandService().registerDefinition(
+        context.commands().registerDefinition(
                 id(),
                 new CommandDefinition(
                         "core.ping",
                         "benecore",
                         List.of("bene*"),
                         CommandSenderType.ANY,
-                        context.permissionService().node(id(), "ping"),
+                        context.permissions().node(id(), "ping"),
                         List.of(new CommandArgumentSpec("echo", CommandArgumentType.WORD, false, List.of())),
                         new CommandActionSpec("Core command layer is active.")));
-        info(context, "Core commands infrastructure is active.");
         return true;
     }
 
     @Override
     public void onDisable(final PluginContext context) {
-        context.commandService().unregisterOwnerCommands(id());
-        info(context, "Core commands infrastructure is shutting down.");
+        context.commands().unregisterOwnerCommands(id());
     }
 }

@@ -18,6 +18,8 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":aedi-api"))
+    implementation("org.luaj:luaj-jse:3.0.1")
     compileOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
     testCompileOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
     testRuntimeOnly("io.papermc.paper:paper-api:${property("paperApiVersion")}")
@@ -34,6 +36,16 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(project(":aedi-api").sourceSets.main.get().output)
+    from(
+        configurations.runtimeClasspath.get()
+            .filter { it.name.startsWith("luaj") && it.name.endsWith(".jar") }
+            .map { zipTree(it) }
+    )
 }
 
 tasks.processResources {
