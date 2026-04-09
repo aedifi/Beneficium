@@ -75,6 +75,7 @@ public final class AediCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(MessageUtil.error("The kernel is unavailable."));
             return true;
         }
+        final Map<ModuleId, String> displayNames = kernel.moduleDisplayNames();
         final Map<ModuleId, ModuleStatus.Snapshot> snapshots = kernel.diagnostics().moduleSnapshots();
         if (snapshots.isEmpty()) {
             sender.sendMessage(MessageUtil.error("There are no modules currently present."));
@@ -90,15 +91,20 @@ public final class AediCommand implements CommandExecutor, TabCompleter {
                 "List of modules (" + enabledCount + "/" + ordered.size() + "):"));
         int ordinal = 1;
         for (final ModuleStatus.Snapshot snapshot : ordered) {
-            sender.sendMessage(MessageUtil.component(moduleSnapshotLine(ordinal++, snapshot)));
+            sender.sendMessage(MessageUtil.component(moduleSnapshotLine(ordinal++, snapshot, displayNames)));
         }
         return true;
     }
 
-    private static String moduleSnapshotLine(final int order, final ModuleStatus.Snapshot snapshot) {
+    private static String moduleSnapshotLine(
+            final int order,
+            final ModuleStatus.Snapshot snapshot,
+            final Map<ModuleId, String> displayNames) {
+        final String pluginLabel =
+                displayNames.getOrDefault(snapshot.moduleId(), snapshot.moduleId().value());
         final StringBuilder line = new StringBuilder();
         line.append("&7").append(order).append(". ")
-                .append("&7").append(snapshot.moduleId().value())
+                .append("&7").append(pluginLabel)
                 .append("&7 - ")
                 .append(colorForModuleState(snapshot.state()))
                 .append(snapshot.state());

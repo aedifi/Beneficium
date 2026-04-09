@@ -8,6 +8,9 @@ import aedifi.bene.module.ModuleLifecycle;
 import aedifi.bene.module.ModuleRegistry;
 import aedifi.bene.module.external.ExternalModuleLoader;
 import aedifi.bene.service.CommandService;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import aedifi.bene.service.ConfigService;
 import aedifi.bene.service.DiagnosticsService;
 import aedifi.bene.service.EventService;
@@ -30,6 +33,7 @@ public final class PluginKernel {
     private final KernelContext context;
     private final ExternalModuleLoader externalModuleLoader;
     private ModuleLifecycle moduleLifecycle;
+    private Map<ModuleId, String> moduleDisplayNames = Map.of();
 
     public PluginKernel(final BenePlugin plugin) {
         this.plugin = plugin;
@@ -59,6 +63,9 @@ public final class PluginKernel {
         configService.load();
         registerAdministrativeCommands();
         externalModuleLoader.loadAll(moduleRegistry);
+        final LinkedHashMap<ModuleId, String> names = new LinkedHashMap<>();
+        externalModuleLoader.loadedModules().forEach((id, loaded) -> names.put(id, loaded.descriptor().displayName()));
+        moduleDisplayNames = Collections.unmodifiableMap(names);
 
         moduleLifecycle = new ModuleLifecycle(
                 moduleRegistry,
@@ -78,6 +85,7 @@ public final class PluginKernel {
             moduleLifecycle.disableAll();
             moduleLifecycle = null;
         }
+        moduleDisplayNames = Map.of();
         externalModuleLoader.closeAll();
         commandService.shutdown();
         eventService.unregisterAllListeners();
@@ -95,5 +103,9 @@ public final class PluginKernel {
 
     public DiagnosticsService diagnostics() {
         return diagnosticsService;
+    }
+
+    public Map<ModuleId, String> moduleDisplayNames() {
+        return moduleDisplayNames;
     }
 }

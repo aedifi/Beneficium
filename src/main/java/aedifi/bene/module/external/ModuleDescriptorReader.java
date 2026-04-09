@@ -32,15 +32,20 @@ public final class ModuleDescriptorReader {
                 final String idRaw = requireNonBlank(
                         yaml.getString(ModuleDescriptor.Keys.ID),
                         ModuleDescriptor.Keys.ID);
+                final String nameRaw = yaml.getString(ModuleDescriptor.Keys.NAME, "");
+                final String name = nameRaw == null ? "" : nameRaw;
                 final String main = requireNonBlank(
                         yaml.getString(ModuleDescriptor.Keys.MAIN),
                         ModuleDescriptor.Keys.MAIN);
+                final String versionRaw = yaml.getString(ModuleDescriptor.Keys.VERSION, "0.0");
+                final String version =
+                        versionRaw == null || versionRaw.isBlank() ? "0.0" : versionRaw;
                 final int apiVersion = yaml.getInt(ModuleDescriptor.Keys.API_VERSION, -1);
                 if (apiVersion < 0) {
                     throw new IllegalArgumentException(
                             "Missing " + ModuleDescriptor.Keys.API_VERSION + " in " + jarPath.getFileName());
                 }
-                return new ModuleDescriptor(ModuleId.of(idRaw), main, apiVersion);
+                return new ModuleDescriptor(ModuleId.of(idRaw), name, main, version, apiVersion);
             }
         }
     }
