@@ -1,11 +1,12 @@
 package aedifi.bene.service;
 
-import aedifi.bene.module.ModuleId;
+import aedifi.bene.api.module.ModuleId;
+import aedifi.bene.api.service.Permissions;
 import java.util.Locale;
 import java.util.Objects;
 import org.bukkit.command.CommandSender;
 
-public final class PermissionService {
+public final class PermissionService implements Permissions {
     private static final String ROOT = "aedifi";
 
     private final PermissionChecker permissionChecker;
@@ -18,16 +19,19 @@ public final class PermissionService {
         this.permissionChecker = Objects.requireNonNull(permissionChecker, "permissionChecker");
     }
 
+    @Override
     public String node(final ModuleId moduleId, final String action) {
         final String module = sanitize(moduleId.value().replace('.', '-'));
         final String operation = sanitize(action);
         return ROOT + "." + module + "." + operation;
     }
 
+    @Override
     public boolean hasPermission(final CommandSender sender, final String permissionNode) {
         return permissionChecker.hasPermission(sender, permissionNode);
     }
 
+    @Override
     public boolean hasPermission(final CommandSender sender, final ModuleId moduleId, final String action) {
         return hasPermission(sender, node(moduleId, action));
     }

@@ -1,6 +1,6 @@
 package aedifi.bene.service;
 
-import aedifi.bene.module.ModuleId;
+import aedifi.bene.api.module.ModuleId;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;

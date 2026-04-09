@@ -19,4 +19,12 @@ public final class BenePlugin extends JavaPlugin {
             kernel = null;
         }
     }
+
+    public PluginKernel kernel() {
+        return kernel;
+    }
+
+    public void replaceKernel(final PluginKernel replacement) {
+        this.kernel = replacement;
+    }
 }

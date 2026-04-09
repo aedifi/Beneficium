@@ -1,5 +1,7 @@
 package aedifi.bene.module;
 
+import aedifi.bene.api.module.Module;
+import aedifi.bene.api.module.ModuleId;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;

@@ -1,0 +1,4 @@
+[submodule "bene-api"]
+	path = bene-api
+	url = https://github.com/aedifi/bene-api.git
+	branch = master

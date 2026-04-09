@@ -1,12 +1,13 @@
 package aedifi.bene.service;
 
-import aedifi.bene.module.ModuleId;
-import aedifi.bene.module.ModuleStatus;
+import aedifi.bene.api.module.ModuleId;
+import aedifi.bene.api.module.ModuleStatus;
+import aedifi.bene.api.service.Diagnostics;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public final class DiagnosticsService {
+public final class DiagnosticsService implements Diagnostics {
     private Supplier<Map<ModuleId, ModuleStatus.Snapshot>> lifecycleSnapshotProvider;
 
     public DiagnosticsService() {
@@ -17,6 +18,7 @@ public final class DiagnosticsService {
         this.lifecycleSnapshotProvider = Objects.requireNonNull(lifecycleSnapshotProvider, "lifecycleSnapshotProvider");
     }
 
+    @Override
     public Map<ModuleId, ModuleStatus.Snapshot> moduleSnapshots() {
         return lifecycleSnapshotProvider.get();
     }
