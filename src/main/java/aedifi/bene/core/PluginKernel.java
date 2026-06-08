@@ -50,7 +50,7 @@ public final class PluginKernel {
         this.httpService = new HttpService(
                 loggingService,
                 configService.httpEnabled(),
-                configService.httpBind(),
+                configService.httpAddress(),
                 configService.httpPort());
         this.moduleRegistry = new ModuleRegistry();
         this.context = new KernelContext(

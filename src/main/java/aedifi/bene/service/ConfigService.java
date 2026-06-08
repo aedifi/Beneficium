@@ -14,7 +14,7 @@ public final class ConfigService {
     private static final String HTTP_SECTION = "http";
     private static final String MODULE_STATE_FILE = "module-state.yml";
     private static final int MISSING_VERSION = -1;
-    private static final String DEFAULT_HTTP_BIND = "127.0.0.1";
+    private static final String DEFAULT_HTTP_ADDRESS = "127.0.0.1";
     private static final int DEFAULT_HTTP_PORT = 2780;
 
     private final JavaPlugin plugin;
@@ -50,8 +50,8 @@ public final class ConfigService {
         return config.getBoolean(HTTP_SECTION + ".enabled", false);
     }
 
-    public String httpBind() {
-        return config.getString(HTTP_SECTION + ".bind", DEFAULT_HTTP_BIND);
+    public String httpAddress() {
+        return config.getString(HTTP_SECTION + ".address", DEFAULT_HTTP_ADDRESS);
     }
 
     public int httpPort() {

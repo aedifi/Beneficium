@@ -35,7 +35,7 @@ public final class HttpService implements Http {
 
     private final LoggingService logging;
     private final boolean enabled;
-    private final String bindHost;
+    private final String address;
     private final int port;
     private final List<RegisteredRoute> routes = new ArrayList<>();
     private final Map<ModuleId, List<RegisteredRoute>> routesByOwner = new ConcurrentHashMap<>();
@@ -43,10 +43,10 @@ public final class HttpService implements Http {
     private HttpServer server;
     private ExecutorService executor;
 
-    public HttpService(final LoggingService logging, final boolean enabled, final String bindHost, final int port) {
+    public HttpService(final LoggingService logging, final boolean enabled, final String address, final int port) {
         this.logging = logging;
         this.enabled = enabled;
-        this.bindHost = bindHost;
+        this.address = address;
         this.port = port;
     }
 
@@ -56,15 +56,15 @@ public final class HttpService implements Http {
             return;
         }
         try {
-            server = HttpServer.create(new InetSocketAddress(bindHost, port), 0);
+            server = HttpServer.create(new InetSocketAddress(address, port), 0);
         } catch (final IOException ex) {
-            throw new IllegalStateException("Failed to bind HTTP listener on " + bindHost + ":" + port, ex);
+            throw new IllegalStateException("Failed to bind HTTP listener on " + address + ":" + port, ex);
         }
         executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE, new NamedThreadFactory());
         server.setExecutor(executor);
         server.createContext("/", new RootHandler());
         server.start();
-        logging.info(COMPONENT, "HTTP listener bound to " + bindHost + ":" + port + ".");
+        logging.info(COMPONENT, "HTTP listener bound to " + address + ":" + port + ".");
     }
 
     public void stop() {

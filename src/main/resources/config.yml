@@ -1,6 +1,6 @@
 http:
   enabled: false
-  bind: 127.0.0.1
+  address: 127.0.0.1
   port: 2780
 modules:
   fail-fast: false
