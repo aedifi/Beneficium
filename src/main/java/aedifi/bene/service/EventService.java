@@ -13,28 +13,15 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class EventService implements Events {
     private final JavaPlugin plugin;
-    private final boolean testMode;
     private final Map<ModuleId, List<Listener>> moduleListeners = new HashMap<>();
 
     public EventService(final JavaPlugin plugin) {
         this.plugin = plugin;
-        this.testMode = false;
-    }
-
-    private EventService() {
-        this.plugin = null;
-        this.testMode = true;
-    }
-
-    public static EventService forTests() {
-        return new EventService();
     }
 
     @Override
     public void registerListener(final ModuleId owner, final Listener listener) {
-        if (!testMode) {
-            Bukkit.getPluginManager().registerEvents(listener, plugin);
-        }
+        Bukkit.getPluginManager().registerEvents(listener, plugin);
         moduleListeners.computeIfAbsent(owner, ignored -> new ArrayList<>(2)).add(listener);
     }
 

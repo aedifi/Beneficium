@@ -12,28 +12,14 @@ import org.bukkit.scheduler.BukkitTask;
 
 public final class SchedulerService implements Scheduler {
     private final JavaPlugin plugin;
-    private final boolean testMode;
     private final Map<ModuleId, List<BukkitTask>> moduleTasks = new HashMap<>();
 
     public SchedulerService(final JavaPlugin plugin) {
         this.plugin = plugin;
-        this.testMode = false;
-    }
-
-    private SchedulerService() {
-        this.plugin = null;
-        this.testMode = true;
-    }
-
-    public static SchedulerService forTests() {
-        return new SchedulerService();
     }
 
     @Override
     public BukkitTask runTask(final ModuleId owner, final Runnable task) {
-        if (testMode) {
-            throw new IllegalStateException("Task scheduling is unavailable in test mode.");
-        }
         final BukkitTask bukkitTask = Bukkit.getScheduler().runTask(plugin, task);
         trackTask(owner, bukkitTask);
         return bukkitTask;
@@ -41,9 +27,6 @@ public final class SchedulerService implements Scheduler {
 
     @Override
     public BukkitTask runTaskTimer(final ModuleId owner, final Runnable task, final long delay, final long period) {
-        if (testMode) {
-            throw new IllegalStateException("Task scheduling is unavailable in test mode.");
-        }
         final BukkitTask bukkitTask = Bukkit.getScheduler().runTaskTimer(plugin, task, delay, period);
         trackTask(owner, bukkitTask);
         return bukkitTask;

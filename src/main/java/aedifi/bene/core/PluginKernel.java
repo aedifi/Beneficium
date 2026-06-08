@@ -14,6 +14,7 @@ import java.util.Map;
 import aedifi.bene.service.ConfigService;
 import aedifi.bene.service.DiagnosticsService;
 import aedifi.bene.service.EventService;
+import aedifi.bene.service.HttpService;
 import aedifi.bene.service.LoggingService;
 import aedifi.bene.service.PermissionService;
 import aedifi.bene.service.SchedulerService;
@@ -29,6 +30,7 @@ public final class PluginKernel {
     private final PermissionService permissionService;
     private final DiagnosticsService diagnosticsService;
     private final CommandService commandService;
+    private final HttpService httpService;
     private final ModuleRegistry moduleRegistry;
     private final KernelContext context;
     private final ExternalModuleLoader externalModuleLoader;
@@ -44,6 +46,12 @@ public final class PluginKernel {
         this.permissionService = new PermissionService();
         this.diagnosticsService = new DiagnosticsService();
         this.commandService = new CommandService(plugin, loggingService);
+        configService.load();
+        this.httpService = new HttpService(
+                loggingService,
+                configService.httpEnabled(),
+                configService.httpBind(),
+                configService.httpPort());
         this.moduleRegistry = new ModuleRegistry();
         this.context = new KernelContext(
                 plugin,
@@ -53,14 +61,15 @@ public final class PluginKernel {
                 eventService,
                 permissionService,
                 diagnosticsService,
-                commandService);
+                commandService,
+                httpService);
         this.externalModuleLoader = new ExternalModuleLoader(plugin, loggingService);
     }
 
     public void start() {
         final long start = System.nanoTime();
         loggingService.info("kernel", "Kernel is starting up.");
-        configService.load();
+        httpService.start();
         registerAdministrativeCommands();
         externalModuleLoader.loadAll(moduleRegistry);
         final LinkedHashMap<ModuleId, String> names = new LinkedHashMap<>();
@@ -90,6 +99,7 @@ public final class PluginKernel {
         commandService.shutdown();
         eventService.unregisterAllListeners();
         schedulerService.cancelAllTrackedTasks();
+        httpService.stop();
     }
 
     private void registerAdministrativeCommands() {

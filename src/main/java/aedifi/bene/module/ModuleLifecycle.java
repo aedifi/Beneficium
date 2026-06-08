@@ -140,6 +140,7 @@ public final class ModuleLifecycle {
         context.scheduler().cancelOwnerTasks(moduleId);
         context.events().unregisterOwnerListeners(moduleId);
         context.commands().unregisterOwnerCommands(moduleId);
+        context.http().unregisterOwnerRoutes(moduleId);
     }
 
     private static String formatMillis(final double millis) {

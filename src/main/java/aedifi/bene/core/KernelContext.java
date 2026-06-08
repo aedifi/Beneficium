@@ -3,6 +3,7 @@ package aedifi.bene.core;
 import aedifi.bene.api.service.Commands;
 import aedifi.bene.api.service.Diagnostics;
 import aedifi.bene.api.service.Events;
+import aedifi.bene.api.service.Http;
 import aedifi.bene.api.service.Logging;
 import aedifi.bene.api.service.Permissions;
 import aedifi.bene.api.service.Scheduler;
@@ -10,6 +11,7 @@ import aedifi.bene.service.CommandService;
 import aedifi.bene.service.ConfigService;
 import aedifi.bene.service.DiagnosticsService;
 import aedifi.bene.service.EventService;
+import aedifi.bene.service.HttpService;
 import aedifi.bene.service.LoggingService;
 import aedifi.bene.service.PermissionService;
 import aedifi.bene.service.SchedulerService;
@@ -24,6 +26,7 @@ public final class KernelContext implements aedifi.bene.api.PluginContext {
     private final PermissionService permissionService;
     private final DiagnosticsService diagnosticsService;
     private final CommandService commandService;
+    private final HttpService httpService;
 
     public KernelContext(
             final JavaPlugin plugin,
@@ -33,7 +36,8 @@ public final class KernelContext implements aedifi.bene.api.PluginContext {
             final EventService eventService,
             final PermissionService permissionService,
             final DiagnosticsService diagnosticsService,
-            final CommandService commandService) {
+            final CommandService commandService,
+            final HttpService httpService) {
         this.plugin = plugin;
         this.configService = configService;
         this.schedulerService = schedulerService;
@@ -42,6 +46,7 @@ public final class KernelContext implements aedifi.bene.api.PluginContext {
         this.permissionService = permissionService;
         this.diagnosticsService = diagnosticsService;
         this.commandService = commandService;
+        this.httpService = httpService;
     }
 
     @Override
@@ -81,5 +86,10 @@ public final class KernelContext implements aedifi.bene.api.PluginContext {
     @Override
     public Commands commands() {
         return commandService;
+    }
+
+    @Override
+    public Http http() {
+        return httpService;
     }
 }

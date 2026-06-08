@@ -3,8 +3,6 @@ package aedifi.bene.service;
 import aedifi.bene.api.module.ModuleId;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -13,8 +11,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ConfigService {
     private static final String MODULES_SECTION = "modules";
+    private static final String HTTP_SECTION = "http";
     private static final String MODULE_STATE_FILE = "module-state.yml";
     private static final int MISSING_VERSION = -1;
+    private static final String DEFAULT_HTTP_BIND = "127.0.0.1";
+    private static final int DEFAULT_HTTP_PORT = 2780;
 
     private final JavaPlugin plugin;
     private final Logger logger;
@@ -22,46 +23,15 @@ public final class ConfigService {
     private final File moduleStateFile;
 
     private FileConfiguration config;
-    private final boolean testMode;
-    private final Map<String, Integer> testState;
-    private final boolean testFailFast;
-    private final boolean testStrictDependencies;
 
     public ConfigService(final JavaPlugin plugin) {
         this.plugin = plugin;
         this.logger = plugin.getLogger();
         this.moduleStateConfig = new YamlConfiguration();
         this.moduleStateFile = new File(plugin.getDataFolder(), MODULE_STATE_FILE);
-        this.testMode = false;
-        this.testState = Map.of();
-        this.testFailFast = false;
-        this.testStrictDependencies = true;
-    }
-
-    private ConfigService(
-            final Map<String, Integer> moduleState,
-            final boolean failFast,
-            final boolean strictDependencies) {
-        this.plugin = null;
-        this.logger = Logger.getAnonymousLogger();
-        this.moduleStateConfig = null;
-        this.moduleStateFile = null;
-        this.config = null;
-        this.testMode = true;
-        this.testState = new HashMap<>(moduleState);
-        this.testFailFast = failFast;
-        this.testStrictDependencies = strictDependencies;
-    }
-
-    public static ConfigService forTests(final boolean failFast, final boolean strictDependencies) {
-        return new ConfigService(Map.of(), failFast, strictDependencies);
     }
 
     public void load() {
-        if (testMode) {
-            return;
-        }
-
         plugin.saveDefaultConfig();
         config = plugin.getConfig();
         ensureDataFolderExists();
@@ -69,38 +39,34 @@ public final class ConfigService {
     }
 
     public boolean failFast() {
-        if (testMode) {
-            return testFailFast;
-        }
         return config.getBoolean(MODULES_SECTION + ".fail-fast", false);
     }
 
     public boolean strictDependencies() {
-        if (testMode) {
-            return testStrictDependencies;
-        }
         return config.getBoolean(MODULES_SECTION + ".strict-dependencies", true);
     }
 
+    public boolean httpEnabled() {
+        return config.getBoolean(HTTP_SECTION + ".enabled", false);
+    }
+
+    public String httpBind() {
+        return config.getString(HTTP_SECTION + ".bind", DEFAULT_HTTP_BIND);
+    }
+
+    public int httpPort() {
+        return config.getInt(HTTP_SECTION + ".port", DEFAULT_HTTP_PORT);
+    }
+
     public int storedModuleVersion(final ModuleId moduleId) {
-        if (testMode) {
-            return testState.getOrDefault(moduleId.value(), MISSING_VERSION);
-        }
         return moduleStateConfig.getInt(modulePath(moduleId), MISSING_VERSION);
     }
 
     public void setStoredModuleVersion(final ModuleId moduleId, final int version) {
-        if (testMode) {
-            testState.put(moduleId.value(), version);
-            return;
-        }
         moduleStateConfig.set(modulePath(moduleId), version);
     }
 
     public void flushModuleState() {
-        if (testMode) {
-            return;
-        }
         try {
             moduleStateConfig.save(moduleStateFile);
         } catch (final IOException ex) {

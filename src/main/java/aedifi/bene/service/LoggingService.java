@@ -12,10 +12,6 @@ public final class LoggingService implements Logging {
         this.logger = Objects.requireNonNull(logger, "logger");
     }
 
-    public static LoggingService forTests() {
-        return new LoggingService(Logger.getAnonymousLogger());
-    }
-
     @Override
     public void info(final String component, final String message) {
         logger.info(prefix(component) + message);
